@@ -1,0 +1,34 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Go build and test output
+backend/bin/
+backend/coverage.out
+backend/*.exe
+backend/*.test
+backend/test.http
+
+# Nuxt / Node (for the future frontend)
+frontend/node_modules/
+frontend/.nuxt/
+frontend/.output/
+frontend/dist/
+frontend/coverage/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local runtime data
+data/
+tmp/
+*.log
+
+# Local Obsidian workspace
+obsidain/.obsidian/

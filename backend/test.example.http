@@ -1,0 +1,8 @@
+### Test Librus login endpoint
+POST http://localhost:8080/api/v1/login
+Content-Type: application/json
+
+{
+  "username": "your-librus-login",
+  "password": "your-librus-password"
+}
