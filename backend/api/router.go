@@ -10,9 +10,12 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	v1 := r.Group("/api/v1")
-	{
-		v1.POST("/login", handlers.LoginHandler(client.NewClient))
+
+	newAuthenticator := func() handlers.Authenticator {
+		return client.NewClient()
 	}
+
+	v1.POST("/login", handlers.LoginHandler(newAuthenticator))
 
 	r.GET("/health", handlers.HealthHandler)
 
