@@ -14,5 +14,7 @@ func SetupRouter() *gin.Engine {
 		v1.POST("/login", handlers.LoginHandler(client.NewClient))
 	}
 
+	r.GET("/health", handlers.HealthHandler)
+
 	return r
 }
