@@ -17,19 +17,13 @@ func TestGetTimetable(t *testing.T) {
 				t.Errorf("expected method GET, got %s", r.Method)
 			}
 
-			if r.URL.Path != "/Timetables/OneToOneLearningPlan" {
+			if r.URL.Path != "/Timetables" {
 				t.Errorf("unexpected path: %s", r.URL.Path)
 			}
 
 			query := r.URL.Query()
-			if got := query.Get("dateFrom"); got != "2026-09-14" {
-				t.Errorf("expected dateFrom 2026-09-14, got %q", got)
-			}
-			if got := query.Get("dateTo"); got != "2026-09-20" {
-				t.Errorf("expected dateTo 2026-09-20, got %q", got)
-			}
-			if got := query.Get("hideOutdatedEntries"); got != "false" {
-				t.Errorf("expected hideOutdatedEntries false, got %q", got)
+			if got := query.Get("weekStart"); got != "2026-09-14" {
+				t.Errorf("expected weekStart 2026-09-14, got %q", got)
 			}
 
 			w.Header().Set("Content-Type", "application/json")

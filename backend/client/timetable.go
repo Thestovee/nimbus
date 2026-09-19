@@ -13,15 +13,12 @@ func (c *LibrusClient) GetTimetable(
 	ctx context.Context,
 	weekStart time.Time,
 ) (json.RawMessage, error) {
-	// ref url https://synergia.librus.pl/gateway/api/2.0/Timetables/OneToOneLearningPlan?dateFrom=2026-09-14&dateTo=2026-09-20&hideOutdatedEntries=false
-	u, err := url.Parse(c.APIBaseURL + "/Timetables/OneToOneLearningPlan")
+	u, err := url.Parse(c.APIBaseURL + "/Timetables")
 	if err != nil {
 		return nil, err
 	}
 	q := u.Query()
-	q.Set("dateFrom", weekStart.Format("2006-01-02"))
-	q.Set("dateTo", weekStart.AddDate(0, 0, 6).Format("2006-01-02"))
-	q.Set("hideOutdatedEntries", "false")
+	q.Set("weekStart", weekStart.Format("2006-01-02"))
 	u.RawQuery = q.Encode()
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
