@@ -23,6 +23,7 @@ const (
 
 type LibrusClient struct {
 	HTTPClient *http.Client
+	APIBaseURL string
 }
 
 func NewClient() *LibrusClient {
@@ -32,6 +33,7 @@ func NewClient() *LibrusClient {
 			Jar:     jar,
 			Timeout: 10 * time.Second,
 		},
+		APIBaseURL: ApiURL,
 	}
 }
 

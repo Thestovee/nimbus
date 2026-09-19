@@ -1,1 +1,43 @@
 package client
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+)
+
+func (c *LibrusClient) GetTimetable(
+	ctx context.Context,
+	weekStart time.Time,
+) (json.RawMessage, error) {
+	// ref url https://synergia.librus.pl/gateway/api/2.0/Timetables/OneToOneLearningPlan?dateFrom=2026-09-14&dateTo=2026-09-20&hideOutdatedEntries=false
+	u, err := url.Parse(c.APIBaseURL + "/Timetables/OneToOneLearningPlan")
+	if err != nil {
+		return nil, err
+	}
+	q := u.Query()
+	q.Set("dateFrom", weekStart.Format("2006-01-02"))
+	q.Set("dateTo", weekStart.AddDate(0, 0, 6).Format("2006-01-02"))
+	q.Set("hideOutdatedEntries", "false")
+	u.RawQuery = q.Encode()
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("timetable: librus API responded with %s", resp.Status)
+	}
+	var data json.RawMessage
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
