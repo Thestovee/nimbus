@@ -41,3 +41,27 @@ func (c *LibrusClient) GetTimetable(
 	}
 	return &data, nil
 }
+
+func (c *LibrusClient) GetClassrooms(ctx context.Context) (*LibrusClassroomsResponse, error) {
+	u, err := url.Parse(c.APIBaseURL + "/Classrooms")
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Classrooms: librus API responded with %s", resp.Status)
+	}
+	var data LibrusClassroomsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
