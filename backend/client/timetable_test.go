@@ -27,7 +27,7 @@ func TestGetTimetable(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"sample":true}`))
+			_, _ = w.Write([]byte(`{"Timetable":{"2026-09-14":[[{"LessonNo":"0"}]]}}`))
 		},
 	))
 	defer server.Close()
@@ -42,8 +42,12 @@ func TestGetTimetable(t *testing.T) {
 		t.Fatalf("GetTimetable returned an error: %v", err)
 	}
 
-	if got := string(data); got != `{"sample":true}` {
-		t.Errorf("unexpected response: %q", got)
+	if data == nil {
+		t.Fatal("GetTimetable returned no response")
+	}
+	slots := data.Timetable["2026-09-14"]
+	if len(slots) != 1 || len(slots[0]) != 1 || slots[0][0].LessonNo != "0" {
+		t.Errorf("unexpected timetable: %+v", data.Timetable)
 	}
 }
 

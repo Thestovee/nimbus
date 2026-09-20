@@ -12,11 +12,12 @@ import (
 func (c *LibrusClient) GetTimetable(
 	ctx context.Context,
 	weekStart time.Time,
-) (json.RawMessage, error) {
+) (*LibrusTimetableResponse, error) {
 	u, err := url.Parse(c.APIBaseURL + "/Timetables")
 	if err != nil {
 		return nil, err
 	}
+
 	q := u.Query()
 	q.Set("weekStart", weekStart.Format("2006-01-02"))
 	u.RawQuery = q.Encode()
@@ -28,13 +29,15 @@ func (c *LibrusClient) GetTimetable(
 	if err != nil {
 		return nil, err
 	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("timetable: librus API responded with %s", resp.Status)
 	}
-	var data json.RawMessage
+
+	var data LibrusTimetableResponse
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return nil, err
 	}
-	return data, nil
+	return &data, nil
 }
