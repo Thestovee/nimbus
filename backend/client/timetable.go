@@ -12,17 +12,41 @@ import (
 func (c *LibrusClient) GetTimetable(
 	ctx context.Context,
 	weekStart time.Time,
-) (json.RawMessage, error) {
-	// ref url https://synergia.librus.pl/gateway/api/2.0/Timetables/OneToOneLearningPlan?dateFrom=2026-09-14&dateTo=2026-09-20&hideOutdatedEntries=false
-	u, err := url.Parse(c.APIBaseURL + "/Timetables/OneToOneLearningPlan")
+) (*LibrusTimetableResponse, error) {
+	u, err := url.Parse(c.APIBaseURL + "/Timetables")
 	if err != nil {
 		return nil, err
 	}
+
 	q := u.Query()
-	q.Set("dateFrom", weekStart.Format("2006-01-02"))
-	q.Set("dateTo", weekStart.AddDate(0, 0, 6).Format("2006-01-02"))
-	q.Set("hideOutdatedEntries", "false")
+	q.Set("weekStart", weekStart.Format("2006-01-02"))
 	u.RawQuery = q.Encode()
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("timetable: librus API responded with %s", resp.Status)
+	}
+
+	var data LibrusTimetableResponse
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+func (c *LibrusClient) GetClassrooms(ctx context.Context) (*LibrusClassroomsResponse, error) {
+	u, err := url.Parse(c.APIBaseURL + "/Classrooms")
+	if err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
 		return nil, err
@@ -33,11 +57,11 @@ func (c *LibrusClient) GetTimetable(
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("timetable: librus API responded with %s", resp.Status)
+		return nil, fmt.Errorf("Classrooms: librus API responded with %s", resp.Status)
 	}
-	var data json.RawMessage
+	var data LibrusClassroomsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return nil, err
 	}
-	return data, nil
+	return &data, nil
 }

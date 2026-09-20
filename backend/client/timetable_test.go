@@ -17,23 +17,17 @@ func TestGetTimetable(t *testing.T) {
 				t.Errorf("expected method GET, got %s", r.Method)
 			}
 
-			if r.URL.Path != "/Timetables/OneToOneLearningPlan" {
+			if r.URL.Path != "/Timetables" {
 				t.Errorf("unexpected path: %s", r.URL.Path)
 			}
 
 			query := r.URL.Query()
-			if got := query.Get("dateFrom"); got != "2026-09-14" {
-				t.Errorf("expected dateFrom 2026-09-14, got %q", got)
-			}
-			if got := query.Get("dateTo"); got != "2026-09-20" {
-				t.Errorf("expected dateTo 2026-09-20, got %q", got)
-			}
-			if got := query.Get("hideOutdatedEntries"); got != "false" {
-				t.Errorf("expected hideOutdatedEntries false, got %q", got)
+			if got := query.Get("weekStart"); got != "2026-09-14" {
+				t.Errorf("expected weekStart 2026-09-14, got %q", got)
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"sample":true}`))
+			_, _ = w.Write([]byte(`{"Timetable":{"2026-09-14":[[{"LessonNo":"0"}]]}}`))
 		},
 	))
 	defer server.Close()
@@ -48,8 +42,12 @@ func TestGetTimetable(t *testing.T) {
 		t.Fatalf("GetTimetable returned an error: %v", err)
 	}
 
-	if got := string(data); got != `{"sample":true}` {
-		t.Errorf("unexpected response: %q", got)
+	if data == nil {
+		t.Fatal("GetTimetable returned no response")
+	}
+	slots := data.Timetable["2026-09-14"]
+	if len(slots) != 1 || len(slots[0]) != 1 || slots[0][0].LessonNo != "0" {
+		t.Errorf("unexpected timetable: %+v", data.Timetable)
 	}
 }
 
