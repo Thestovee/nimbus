@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"nimbus/client"
+	"nimbus/session"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,11 +27,14 @@ func (f *fakeAuthenticator) Authenticate(username, password string) error {
 	return f.err
 }
 
-func newLoginTestRouter(authenticator Authenticator) *gin.Engine {
+func newLoginTestRouter(authenticator *fakeAuthenticator) *gin.Engine {
 	router := gin.New()
-	router.POST("/login", LoginHandler(func() Authenticator {
-		return authenticator
-	}))
+	router.POST("/login", LoginHandler(func(username, password string) (*client.LibrusClient, error) {
+		if err := authenticator.Authenticate(username, password); err != nil {
+			return nil, err
+		}
+		return client.NewClient(), nil
+	}, session.NewStore()))
 
 	return router
 }
@@ -70,6 +76,18 @@ func TestLoginHandlerSuccess(t *testing.T) {
 	}
 	if fake.calls != 1 {
 		t.Errorf("expected Authenticate to be called once, got %d", fake.calls)
+	}
+
+	cookies := response.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Fatalf("expected one session cookie, got %d", len(cookies))
+	}
+	cookie := cookies[0]
+	if cookie.Name != "nimbus_session" || cookie.Value == "" {
+		t.Errorf("expected a nonempty nimbus_session cookie, got %q=%q", cookie.Name, cookie.Value)
+	}
+	if cookie.Path != "/" || cookie.MaxAge != 24*60*60 || !cookie.HttpOnly || cookie.SameSite != http.SameSiteLaxMode {
+		t.Errorf("unexpected session cookie attributes: %+v", cookie)
 	}
 }
 
@@ -125,5 +143,27 @@ func TestLoginHandlerRejectsAuthenticationError(t *testing.T) {
 		t.Fatalf(
 			"expected Authenticate to be called once, got %d",
 			fake.calls)
+	}
+	if cookies := response.Result().Cookies(); len(cookies) != 0 {
+		t.Fatalf("expected no cookie after failed authentication, got %d", len(cookies))
+	}
+}
+
+func TestLoginHandlerRejectsSessionCreationError(t *testing.T) {
+	router := gin.New()
+	router.POST("/login", LoginHandler(func(username, password string) (*client.LibrusClient, error) {
+		return nil, nil
+	}, session.NewStore()))
+
+	request := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(`{"username":"student","password":"secret"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status %d, got %d", http.StatusInternalServerError, response.Code)
+	}
+	if strings.Contains(response.Body.String(), "Logged in successfully") {
+		t.Fatalf("success response followed a session error: %q", response.Body.String())
 	}
 }
